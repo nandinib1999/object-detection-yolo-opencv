@@ -5,13 +5,15 @@ import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--webcam', help="True/False", default=False)
+parser.add_argument('--play_video', help="Tue/False", default=False)
+parser.add_argument('--video_path', help="Path of video file", default="videos/car_on_road.mp4")
 parser.add_argument('--image_path', help="Path of image to detect objects", default="Images/bicycle.jpg")
 parser.add_argument('--verbose', help="To print statements", default=True)
 args = parser.parse_args()
 
 #Load yolo
 def load_yolo():
-	net = cv2.dnn.readNet("yolov3-tiny.weights", "yolov3-tiny.cfg")
+	net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
 	classes = []
 	with open("coco.names", "r") as f:
 		classes = [line.strip() for line in f.readlines()]
@@ -113,12 +115,38 @@ def webcam_detect():
 	cap.release()
 
 
+def start_video(video_path):
+	global frame_id
+	model, classes, colors, output_layers = load_yolo()
+	cap = cv2.VideoCapture(video_path)
+	starting_time = time.time()
+	frame_id = 0
+	while True:
+		_, frame = cap.read()
+		frame_id += 1
+		height, width, channels = frame.shape
+		blob, outputs = detect_objects(frame, model, output_layers)
+		boxes, confs, class_ids = get_box_dimensions(outputs, height, width)
+		draw_labels(boxes, confs, colors, class_ids, classes, frame, starting_time)
+		key = cv2.waitKey(1)
+		if key == 27:
+			break
+	cap.release()
+
+
+
 if __name__ == '__main__':
 	webcam = args.webcam
+	video_play = args.play_video
 	if webcam:
 		if args.verbose:
 			print('---- Starting Web Cam object detection ----')
 		webcam_detect()
+	if video_play:
+		video_path = args.video_path
+		if args.verbose:
+			print('Opening '+video_path+" .... ")
+		start_video(video_path)
 	else:
 		image_path = args.image_path
 		if args.verbose:
