@@ -39,14 +39,14 @@ def start_webcam():
 
 def display_blob(blob):
 	'''
-		Three images each for RED, GREEN, BLUE
+		Three images each for RED, GREEN, BLUE channel
 	'''
 	for b in blob:
 		for n, imgb in enumerate(b):
 			cv2.imshow(str(n), imgb)
 
 def detect_objects(img, net, outputLayers):			
-	blob = cv2.dnn.blobFromImage(img, 0.00392, (320, 320), (0, 0, 0), True, crop=False)
+	blob = cv2.dnn.blobFromImage(img, scalefactor=0.00392, size=(320, 320), mean=(0, 0, 0), swapRB=True, crop=False)
 	net.setInput(blob)
 	outputs = net.forward(outputLayers)
 	return blob, outputs
@@ -154,5 +154,8 @@ if __name__ == '__main__':
 		if args.verbose:
 			print("Opening "+image_path+" .... ")
 		image_detect(image_path)
-		cv2.waitKey(0)
+	
+	key = cv2.waitKey(1)
+	if key == ord('q'):
+            break
 	cv2.destroyAllWindows()
