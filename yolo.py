@@ -72,7 +72,7 @@ def get_box_dimensions(outputs, height, width):
 				class_ids.append(class_id)
 	return boxes, confs, class_ids
 			
-def draw_labels(boxes, confs, colors, class_ids, classes, img, starting_time): 
+def draw_labels(boxes, confs, colors, class_ids, classes, img): 
 	indexes = cv2.dnn.NMSBoxes(boxes, confs, 0.5, 0.4)
 	font = cv2.FONT_HERSHEY_PLAIN
 	for i in range(len(boxes)):
@@ -82,34 +82,28 @@ def draw_labels(boxes, confs, colors, class_ids, classes, img, starting_time):
 			color = colors[i]
 			cv2.rectangle(img, (x,y), (x+w, y+h), color, 2)
 			cv2.putText(img, label, (x, y - 5), font, 1, color, 1)
-
-	elapsed_time = time.time() - starting_time
-	if args.webcam:
-		fps = frame_id / elapsed_time
-		print(fps)
 	cv2.imshow("Image", img)
 
 def image_detect(img_path): 
-	starting_time = time.time()
 	model, classes, colors, output_layers = load_yolo()
 	image, height, width, channels = load_image(img_path)
 	blob, outputs = detect_objects(image, model, output_layers)
 	boxes, confs, class_ids = get_box_dimensions(outputs, height, width)
-	draw_labels(boxes, confs, colors, class_ids, classes, image, starting_time)
+	draw_labels(boxes, confs, colors, class_ids, classes, image)
+	while True:
+		key = cv2.waitKey(1)
+		if key == 27:
+			break
 
 def webcam_detect():
-	global frame_id
 	model, classes, colors, output_layers = load_yolo()
 	cap = start_webcam()
-	starting_time = time.time()
-	frame_id = 0
 	while True:
 		_, frame = cap.read()
-		frame_id += 1
 		height, width, channels = frame.shape
 		blob, outputs = detect_objects(frame, model, output_layers)
 		boxes, confs, class_ids = get_box_dimensions(outputs, height, width)
-		draw_labels(boxes, confs, colors, class_ids, classes, frame, starting_time)
+		draw_labels(boxes, confs, colors, class_ids, classes, frame)
 		key = cv2.waitKey(1)
 		if key == 27:
 			break
@@ -117,18 +111,14 @@ def webcam_detect():
 
 
 def start_video(video_path):
-	global frame_id
 	model, classes, colors, output_layers = load_yolo()
 	cap = cv2.VideoCapture(video_path)
-	starting_time = time.time()
-	frame_id = 0
 	while True:
 		_, frame = cap.read()
-		frame_id += 1
 		height, width, channels = frame.shape
 		blob, outputs = detect_objects(frame, model, output_layers)
 		boxes, confs, class_ids = get_box_dimensions(outputs, height, width)
-		draw_labels(boxes, confs, colors, class_ids, classes, frame, starting_time)
+		draw_labels(boxes, confs, colors, class_ids, classes, frame)
 		key = cv2.waitKey(1)
 		if key == 27:
 			break
@@ -155,7 +145,5 @@ if __name__ == '__main__':
 			print("Opening "+image_path+" .... ")
 		image_detect(image_path)
 	
-	key = cv2.waitKey(1)
-	if key == ord('q'):
-            break
+
 	cv2.destroyAllWindows()
